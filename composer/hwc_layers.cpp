@@ -1266,15 +1266,22 @@ void HWCLayer::ValidateAndSetCSC(const native_handle_t *handle) {
         layer_buffer->color_metadata.cRI = new_metadata.cRI;
         layer_->update_mask.set(kMetadataUpdate);
       }
-      if (new_metadata.dynamicMetaDataValid &&
-          ((new_metadata.dynamicMetaDataLen != layer_buffer->color_metadata.dynamicMetaDataLen) ||
-           !SameConfig(layer_buffer->color_metadata.dynamicMetaDataPayload,
-                       new_metadata.dynamicMetaDataPayload, new_metadata.dynamicMetaDataLen))) {
-        layer_buffer->color_metadata.dynamicMetaDataValid = true;
-        layer_buffer->color_metadata.dynamicMetaDataLen = new_metadata.dynamicMetaDataLen;
-        std::memcpy(layer_buffer->color_metadata.dynamicMetaDataPayload,
-                    new_metadata.dynamicMetaDataPayload, new_metadata.dynamicMetaDataLen);
-        layer_->update_mask.set(kContentMetadata);
+      if (new_metadata.dynamicMetaDataValid) {
+        if (new_metadata.dynamicMetaDataLen > HDR_DYNAMIC_META_DATA_SZ) {
+          DLOGE("Dynamic metadata length %u exceeds maximum allowed size %u, "
+                "dropping metadata to prevent buffer overflow",
+                new_metadata.dynamicMetaDataLen, HDR_DYNAMIC_META_DATA_SZ);
+        } else if ((new_metadata.dynamicMetaDataLen !=
+                    layer_buffer->color_metadata.dynamicMetaDataLen) ||
+                   !SameConfig(layer_buffer->color_metadata.dynamicMetaDataPayload,
+                               new_metadata.dynamicMetaDataPayload,
+                               new_metadata.dynamicMetaDataLen)) {
+          layer_buffer->color_metadata.dynamicMetaDataValid = true;
+          layer_buffer->color_metadata.dynamicMetaDataLen = new_metadata.dynamicMetaDataLen;
+          std::memcpy(layer_buffer->color_metadata.dynamicMetaDataPayload,
+                      new_metadata.dynamicMetaDataPayload, new_metadata.dynamicMetaDataLen);
+          layer_->update_mask.set(kContentMetadata);
+        }
       }
     } else {
       dataspace_supported_ = false;
