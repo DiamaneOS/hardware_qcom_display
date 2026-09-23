@@ -890,7 +890,7 @@ void HWCDisplay::BuildSolidFillStack() {
 HWC3::Error HWCDisplay::SetLayerType(LayerId layer_id, LayerType type) {
   const auto map_layer = layer_map_.find(layer_id);
   if (map_layer == layer_map_.end()) {
-    DLOGW("display [%" PRIu64 "]-[%" PRIu64 "] SetLayerType (%" PRIu64 ") failed to find layer",
+    DLOGW("display [%" PRIu64 "]-[%d] SetLayerType (%" PRIu64 ") failed to find layer",
           id_, type_, layer_id);
     return HWC3::Error::BadLayer;
   }
@@ -2029,9 +2029,9 @@ void HWCDisplay::DumpInputBuffers() {
 
     if (!handle) {
       DLOGW(
-          "Buffer handle is detected as null for layer: %s(%d) out of %lu layers with layer "
+          "Buffer handle is detected as null for layer: %s(%" PRIu64 ") out of %zu layers with layer "
           "flag value: %u",
-          layer->layer_name.c_str(), layer->layer_id, layer_stack_.layers.size(), layer->flags);
+          layer->layer_name.c_str(), layer->layer_id, layer_stack_.layers.size(), layer->flags.flags);
       continue;
     }
 
@@ -3523,7 +3523,7 @@ CWBReleaseFenceError HWCDisplay::GetReadbackBufferFenceForClient(CWBClient clien
       // release fence.
       DLOGV_IF(kTagQDCM,
                "Need to wait for release fence, and retry to get it for client:%d, "
-               "buffer_id: %u",
+               "buffer_id: %" PRIu64,
                client, handle_id);
       status = kCWBReleaseFencePending;
     }
@@ -3538,10 +3538,10 @@ CWBReleaseFenceError HWCDisplay::GetReadbackBufferFenceForClient(CWBClient clien
   if (status == kCWBReleaseFenceNotChecked || status == kCWBReleaseFenceWaitTimedOut) {
     DLOGV_IF(kTagQDCM,
              "Fence is available, but either fence wait is timed-out, or "
-             "CWB Manager is not yet notified for client:%d, buffer_id: %u",
+             "CWB Manager is not yet notified for client:%d, buffer_id: %" PRIu64,
              client, handle_id);
   } else if (status == kCWBReleaseFenceUnknownError) {
-    DLOGE("CWB Manager notified unknown error for client:%d, buffer_id: %u", client, handle_id);
+    DLOGE("CWB Manager notified unknown error for client:%d, buffer_id: %" PRIu64, client, handle_id);
   }
 
   return status;
@@ -3721,7 +3721,7 @@ void HWCDisplay::NotifyCwbDone(int32_t status, const LayerBuffer &buffer) {
 
     const auto map_cwb_buffer = cwb_buffer_map_.find(handle_id);
     if (map_cwb_buffer == cwb_buffer_map_.end()) {
-      DLOGV_IF(kTagClient, "CWB Buffer(id = %u) not found in buffer-client map", handle_id);
+      DLOGV_IF(kTagClient, "CWB Buffer(id = %" PRIu64 ") not found in buffer-client map", handle_id);
       return;
     }
     client = map_cwb_buffer->second;
@@ -3750,7 +3750,7 @@ void HWCDisplay::NotifyCwbDone(int32_t status, const LayerBuffer &buffer) {
     }
   }
 
-  DLOGV_IF(kTagClient, "CWB notified for client = %d with buffer = %u, return status = %s(%d)",
+  DLOGV_IF(kTagClient, "CWB notified for client = %d with buffer = %" PRIu64 ", return status = %s(%d)",
            client, handle_id,
            (!status)            ? "Handled"
            : (status == -ETIME) ? "Timedout"
