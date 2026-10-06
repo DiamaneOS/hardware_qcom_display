@@ -27,23 +27,25 @@ UbwcpUtils *UbwcpUtils::GetInstance() {
 }
 
 UbwcpUtils::UbwcpUtils() {
+#ifdef TARGET_USES_UBWCP
   libUbwcpUtils_ = ::dlopen("libubwcp.so", RTLD_NOW);
   if (libUbwcpUtils_) {
     *reinterpret_cast<void **>(&LINK_UBWCPLib_create_session) =
         ::dlsym(libUbwcpUtils_, "UBWCPLib_create_session");
     *reinterpret_cast<void **>(&LINK_UBWCPLib_destroy_session) =
         ::dlsym(libUbwcpUtils_, "UBWCPLib_destroy_session");
-#ifdef TARGET_USES_UBWCP
     *reinterpret_cast<void **>(&LINK_UBWCPLib_get_stride_alignment) =
         ::dlsym(libUbwcpUtils_, "UBWCPLib_get_stride_alignment");
     *reinterpret_cast<void **>(&LINK_UBWCPLib_validate_stride) =
         ::dlsym(libUbwcpUtils_, "UBWCPLib_validate_stride");
     *reinterpret_cast<void **>(&LINK_UBWCPLib_set_buf_attrs) =
         ::dlsym(libUbwcpUtils_, "UBWCPLib_set_buf_attrs");
-#endif
   } else {
     ALOGW("Failed to load libubwcp.so");
   }
+#endif
+  // Without UBWC-P support nothing calls into libubwcp, so it is not loaded:
+  // processes that map buffers (apps among them) neither try nor log a denial.
 }
 
 UbwcpUtils::~UbwcpUtils() {
